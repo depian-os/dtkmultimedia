@@ -1,0 +1,116 @@
+From 691ec6fded6585579a7e0afd546c9b5c3f370819 Mon Sep 17 00:00:00 2001
+From: lhdjply <lhdjply@126.com>
+Date: Sat, 15 Nov 2025 14:58:20 +0800
+Subject: [PATCH] fix build
+
+Signed-off-by: lhdjply <lhdjply@126.com>
+---
+ .../ffmpeg/daudioencoderinterface.cpp         | 45 ++++++++++++++-----
+ .../ffmpeg/daudioencoderinterface_p.h         |  2 +
+ 2 files changed, 37 insertions(+), 10 deletions(-)
+
+diff --git a/src/multimedia/ffmpeg/daudioencoderinterface.cpp b/src/multimedia/ffmpeg/daudioencoderinterface.cpp
+index 26bf74b..5eb2fd1 100644
+--- a/src/multimedia/ffmpeg/daudioencoderinterface.cpp
++++ b/src/multimedia/ffmpeg/daudioencoderinterface.cpp
+@@ -229,14 +229,29 @@ bool DAudioEncoderInterface::openInputAudioCtx()
+     }
+ 
+     // audio converter, convert other fmt to requireAudioFmt
+-    d->audioConverter = d->d_swr_alloc_set_opts(nullptr,
+-                                                d->d_av_get_default_channel_layout(d->channels),
+-                                                AV_SAMPLE_FMT_FLTP,   // aac encoder only receive this format
+-                                                d->sampleRate,
+-                                                d->d_av_get_default_channel_layout(d->audioInCodecCtx->channels),
+-                                                (AVSampleFormat)d->audioInStream->codecpar->format,
+-                                                d->audioInStream->codecpar->sample_rate,
+-                                                0, nullptr);
++    if (d->d_swr_alloc_set_opts2) {
++        AVChannelLayout out_ch_layout = {0};
++        AVChannelLayout in_ch_layout = {0};
++        av_channel_layout_default(&out_ch_layout, d->channels);
++        av_channel_layout_default(&in_ch_layout, d->audioInCodecCtx->channels);
++        d->audioConverter = d->d_swr_alloc_set_opts2(nullptr,
++                                                     &out_ch_layout,
++                                                     AV_SAMPLE_FMT_FLTP,   // aac encoder only receive this format
++                                                     d->sampleRate,
++                                                     &in_ch_layout,
++                                                     (AVSampleFormat)d->audioInStream->codecpar->format,
++                                                     d->audioInStream->codecpar->sample_rate,
++                                                     0, nullptr);
++    } else {
++        d->audioConverter = d->d_swr_alloc_set_opts(nullptr,
++                                                    d->d_av_get_default_channel_layout(d->channels),
++                                                    AV_SAMPLE_FMT_FLTP,   // aac encoder only receive this format
++                                                    d->sampleRate,
++                                                    d->d_av_get_default_channel_layout(d->audioInCodecCtx->channels),
++                                                    (AVSampleFormat)d->audioInStream->codecpar->format,
++                                                    d->audioInStream->codecpar->sample_rate,
++                                                    0, nullptr);
++    }
+     d->d_swr_init(d->audioConverter);
+     //FIFO buffer
+     d->audioFifo = d->d_av_audio_fifo_alloc(AV_SAMPLE_FMT_FLTP,
+@@ -279,7 +294,11 @@ bool DAudioEncoderInterface::openOutputAudioCtx()
+ 
+     d->audioOutCodecCtx = d->d_avcodec_alloc_context3(audioOutCodec);
+     d->audioOutCodecCtx->channels = d->channels;
+-    d->audioOutCodecCtx->channel_layout = d->d_av_get_default_channel_layout(d->channels);
++    if (d->d_av_channel_layout_default) {
++        av_channel_layout_default(&d->audioOutCodecCtx->ch_layout, d->channels);
++    } else {
++        d->audioOutCodecCtx->channel_layout = d->d_av_get_default_channel_layout(d->channels);
++    }
+     d->audioOutCodecCtx->sample_rate = d->sampleRate;
+     d->audioOutCodecCtx->sample_fmt = audioOutCodec->sample_fmts[0];   //for aac , there is AV_SAMPLE_FMT_FLTP =8
+     d->audioOutCodecCtx->bit_rate = d->bitRateAdaptation();
+@@ -451,7 +470,11 @@ void DAudioEncoderInterface::encodeWork()
+             AVFrame *outputFrame = d->d_av_frame_alloc();
+             outputFrame->nb_samples = d->audioOutCodecCtx->frame_size;
+             outputFrame->channels = d->audioInCodecCtx->channels;
+-            outputFrame->channel_layout = d->d_av_get_default_channel_layout(d->audioInCodecCtx->channels);
++            if (d->d_av_channel_layout_default) {
++                av_channel_layout_default(&outputFrame->ch_layout, d->audioInCodecCtx->channels);
++            } else {
++                outputFrame->channel_layout = d->d_av_get_default_channel_layout(d->audioInCodecCtx->channels);
++            }
+             outputFrame->format = AV_SAMPLE_FMT_FLTP;
+             outputFrame->sample_rate = d->audioOutCodecCtx->sample_rate;
+ 
+@@ -539,11 +562,13 @@ bool DAudioEncoderInterface::loadFunction()
+     d->d_avcodec_free_context = reinterpret_cast<decltype(avcodec_free_context) *>(d->libavcodec.resolve("avcodec_free_context"));
+ 
+     d->d_swr_alloc_set_opts = reinterpret_cast<decltype(swr_alloc_set_opts) *>(d->libswresample.resolve("swr_alloc_set_opts"));
++    d->d_swr_alloc_set_opts2 = reinterpret_cast<decltype(swr_alloc_set_opts2) *>(d->libswresample.resolve("swr_alloc_set_opts2"));
+     d->d_swr_init = reinterpret_cast<decltype(swr_init) *>(d->libswresample.resolve("swr_init"));
+     d->d_swr_convert = reinterpret_cast<decltype(swr_convert) *>(d->libswresample.resolve("swr_convert"));
+     d->d_swr_free = reinterpret_cast<decltype(swr_free) *>(d->libswresample.resolve("swr_free"));
+ 
+     d->d_av_get_default_channel_layout = reinterpret_cast<decltype(av_get_default_channel_layout) *>(d->libavutil.resolve("av_get_default_channel_layout"));
++    d->d_av_channel_layout_default = reinterpret_cast<decltype(av_channel_layout_default) *>(d->libavutil.resolve("av_channel_layout_default"));
+     d->d_av_audio_fifo_alloc = reinterpret_cast<decltype(av_audio_fifo_alloc) *>(d->libavutil.resolve("av_audio_fifo_alloc"));
+     d->d_av_frame_alloc = reinterpret_cast<decltype(av_frame_alloc) *>(d->libavutil.resolve("av_frame_alloc"));
+     d->d_av_samples_alloc_array_and_samples = reinterpret_cast<decltype(av_samples_alloc_array_and_samples) *>(d->libavutil.resolve("av_samples_alloc_array_and_samples"));
+diff --git a/src/multimedia/ffmpeg/daudioencoderinterface_p.h b/src/multimedia/ffmpeg/daudioencoderinterface_p.h
+index ebcf2ac..0d9bc88 100644
+--- a/src/multimedia/ffmpeg/daudioencoderinterface_p.h
++++ b/src/multimedia/ffmpeg/daudioencoderinterface_p.h
+@@ -75,6 +75,7 @@ private:
+     decltype(avcodec_free_context) *d_avcodec_free_context { nullptr };
+ 
+     decltype(swr_alloc_set_opts) *d_swr_alloc_set_opts { nullptr };
++    decltype(swr_alloc_set_opts2) *d_swr_alloc_set_opts2 { nullptr };
+     decltype(swr_init) *d_swr_init { nullptr };
+     decltype(swr_convert) *d_swr_convert { nullptr };
+     decltype(swr_free) *d_swr_free { nullptr };
+@@ -82,6 +83,7 @@ private:
+     decltype(av_audio_fifo_alloc) *d_av_audio_fifo_alloc { nullptr };
+     decltype(av_frame_alloc) *d_av_frame_alloc { nullptr };
+     decltype(av_get_default_channel_layout) *d_av_get_default_channel_layout { nullptr };
++    decltype(av_channel_layout_default) *d_av_channel_layout_default { nullptr };
+     decltype(av_samples_alloc_array_and_samples) *d_av_samples_alloc_array_and_samples { nullptr };
+     decltype(av_audio_fifo_space) *d_av_audio_fifo_space { nullptr };
+     decltype(av_audio_fifo_write) *d_av_audio_fifo_write { nullptr };
+-- 
+2.50.1
+

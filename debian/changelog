@@ -1,3 +1,9 @@
+dtkmultimedia (6.0.1-0depian1) unstable; urgency=medium
+
+  * fix build
+
+ -- lhdjply <lhdjply@126.com>  Sat, 15 Nov 2025 14:58:20 +0800
+
 dtkmultimedia (6.0.1) unstable; urgency=medium
 
   * fix: ocr crash on sw64(Bug: 310269)
