@@ -1,0 +1,74 @@
+dtkmultimedia (6.0.1) unstable; urgency=medium
+
+  * fix: ocr crash on sw64(Bug: 310269)
+
+ -- renbin <renbin@uniontech.com>  Wed, 02 Apr 2025 15:56:26 +0800
+
+dtkmultimedia (6.0.0) unstable; urgency=medium
+
+  * feat: enable Qt6 build and switch to Qt6.8
+
+ -- renbin <renbin@uniontech.com>  Tue, 14 Jan 2025 19:10:08 +0800
+
+dtkmultimedia (1.0.9) unstable; urgency=medium
+
+  * fix ocr failed 
+
+ -- xiepengfei <xiepengfei@uniontech.com>  Tue, 24 Dec 2024 20:24:33 +0800
+
+dtkmultimedia (1.0.8) unstable; urgency=medium
+
+  * fix ocr failed 
+
+ -- xiepengfei <xiepengfei@uniontech.com>  Sat, 07 Dec 2024 13:25:01 +0800
+
+dtkmultimedia (1.0.7) unstable; urgency=medium
+
+  * fix doc update failed 
+
+ -- Liu zheng <liuzheng@uniontech.com>  Mon, 22 Jul 2024 15:38:26 +0800
+
+dtkmultimedia (1.0.6) unstable; urgency=medium
+
+  * fix memory leak
+
+ -- Deepin Packages Builder <packages@deepin.com>  Thur, 14 Sep 2023 15:33:21 +0800
+
+dtkmultimedia (1.0.5) unstable; urgency=medium
+
+  * fix compile error
+
+ -- Deepin Packages Builder <packages@deepin.com>  Tue, 22 Aug 2023 10:13:45 +0800
+
+dtkmultimedia (1.0.4) unstable; urgency=medium
+
+  * update version
+
+ -- Deepin Packages Builder <packages@deepin.com>  Wed, 08 Mar 2023 10:13:45 +0800
+
+dtkmultimedia (1.0.3) unstable; urgency=medium
+
+  * add multimedia info and convert feature
+  * add ocr normal plugin feature
+  * update version
+
+ -- Deepin Packages Builder <packages@deepin.com>  Wed, 04 Jan 2023 13:10:07 +0800
+
+dtkmultimedia (1.0.2) unstable; urgency=medium
+
+  * add ocr feature
+  * update version
+
+ -- Deepin Packages Builder <packages@deepin.com>  Wed, 04 Jan 2023 13:10:07 +0800
+
+dtkmultimedia (1.0.1) unstable; urgency=medium
+
+  * update version
+
+ -- Deepin Packages Builder <packages@deepin.com>  Wed, 14 Dec 2022 13:29:07 +0800
+
+dtkmultimedia (1.0.0) unstable; urgency=medium
+
+  * Initial release
+
+ -- Deepin Packages Builder <packages@deepin.com>  Fri, 01 Jul 2022 14:29:07 +0800
